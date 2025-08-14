@@ -1,27 +1,55 @@
+import os
 import subprocess
+import time
 from datetime import datetime
 
-curr_datetime = datetime.now()
-
-curr_time = curr_datetime.time()
-curr_date = curr_datetime.date()
-
-res = subprocess.run(["ls", "-l"], capture_output=True, text=True)
-
-command = ""
-for arg in res.args:
-    command = command + arg + " "
-
-if res.returncode != 0:
-    with open("./logs/errors.log", "a") as err_log:
-        err_log.write(
-            f"Got err: {res.stderr} for {command.strip()} at {curr_time.hour}:{curr_time.minute}:{curr_time.second} on {curr_date}\n"
-        )
-    print(res.stderr)
+import schedule
 
 
-# update logs
-with open("./logs/command.log", "a") as log:
-    log.write(
-        f"Ran {command.strip()} at {curr_time.hour}:{curr_time.minute}:{curr_time.second} on {curr_date}\n"
-    )
+def verify_log_dir():
+    try:
+        os.makedirs("./logs", exist_ok=True)
+    except OSError as e:
+        print(f"Error while creating log directory: {e}")
+
+
+def update_logs(res, command):
+    curr_datetime = datetime.now()
+    curr_time = curr_datetime.strftime("%H:%M:%S")
+    curr_date = curr_datetime.strftime("%Y-%m-%d")
+
+    try:
+        if res.returncode != 0:
+            with open("./logs/errors.log", "a") as err_log:
+                err_log.write(
+                    f"Got err: {res.stderr} for {command.strip()} at {curr_time} on {curr_date}\n"
+                )
+
+        with open("./logs/command.log", "a") as log:
+            log.write(
+                f"Ran {command.strip()} at {curr_time.hour}:{curr_time.minute}:{curr_time.second} on {curr_date}\n"
+            )
+    except IOError as e:
+        print(f"Error while logging: {e}")
+
+
+def schedule_process():
+    try:
+        res = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+        command = " ".join(res.args)
+        update_logs(res, command)
+    except Exception as e:
+        print(f"Error while running command: {e}")
+
+
+def main():
+    verify_log_dir()
+    schedule.every(5).seconds.do(schedule_process)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()
