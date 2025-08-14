@@ -1,9 +1,32 @@
+import argparse
 import os
 import subprocess
 import time
 from datetime import datetime
 
 import schedule
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-d",
+        "--work-dir",
+        type=str,
+        default=".",
+        help="Directory to run tool in (default: current directory)",
+    )
+
+    parser.add_argument("-t", "--tasks", type=str, help="Tasks to schedule")
+
+    parser.add_argument(
+        "-l",
+        "--log-dir",
+        type=str,
+        default="./logs",
+        help="Log directory (default: ./logs)",
+    )
 
 
 def verify_log_dir():
