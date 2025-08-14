@@ -1,32 +1,60 @@
 import argparse
 import os
 import subprocess
+import sys
 import time
 from datetime import datetime
 
 import schedule
 
 
+def validate_dir(*args):
+    for dir in args:
+        if not os.path.isdir(dir):
+            print(f"Error: Directory '{dir}' does not exist.")
+            sys.exit(1)
+
+
+def validate_file(*args):
+    for file in args:
+        if not os.path.isfile(file):
+            print(f"Error: File '{file}' does not exist.")
+            sys.exit(1)
+
+
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Run tasks based on a schedule",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     parser.add_argument(
         "-d",
         "--work-dir",
         type=str,
-        default=".",
-        help="Directory to run tool in (default: current directory)",
+        required=True,
+        help="Directory to run tool in",
     )
 
-    parser.add_argument("-t", "--tasks", type=str, help="Tasks to schedule")
+    parser.add_argument(
+        "-t", "--tasks", type=str, required=True, help="Tasks to schedule"
+    )
 
     parser.add_argument(
         "-l",
         "--log-dir",
         type=str,
-        default="./logs",
-        help="Log directory (default: ./logs)",
+        required=True,
+        help="Log directory",
     )
+
+    args = parser.parse_args()
+
+    # validate paths
+    validate_dir(args.work_dir, args.log_dir)
+    validate_file(args.tasks)
+
+    return args
 
 
 def verify_log_dir():
