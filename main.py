@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -57,45 +58,61 @@ def parse_args():
     return args
 
 
-def verify_log_dir():
-    try:
-        os.makedirs("./logs", exist_ok=True)
-    except OSError as e:
-        print(f"Error while creating log directory: {e}")
-
-
-def update_logs(res, command):
+def update_logs(result, command):
     curr_datetime = datetime.now()
     curr_time = curr_datetime.strftime("%H:%M:%S")
     curr_date = curr_datetime.strftime("%Y-%m-%d")
 
     try:
-        if res.returncode != 0:
-            with open("./logs/errors.log", "a") as err_log:
+        args = parse_args()
+        result_file = os.path.join(args.log_dir, "results.log")
+        error_file = os.path.join(args.log_dir, "errors.log")
+
+        if result.returncode != 0:
+            with open(error_file, "a") as err_log:
                 err_log.write(
-                    f"Got err: {res.stderr} for {command.strip()} at {curr_time} on {curr_date}\n"
+                    f"Got err: {result.stderr} for {command} at {curr_time} on {curr_date}\n"
                 )
 
-        with open("./logs/command.log", "a") as log:
-            log.write(
-                f"Ran {command.strip()} at {curr_time.hour}:{curr_time.minute}:{curr_time.second} on {curr_date}\n"
+        with open(result_file, "a") as res_log:
+            res_log.write(
+                f"Got output: {result.stdout} for {command} at {curr_time} on {curr_date}\n"
             )
     except IOError as e:
         print(f"Error while logging: {e}")
 
 
-def schedule_process():
+def run_command():
     try:
-        res = subprocess.run(["ls", "-l"], capture_output=True, text=True)
-        command = " ".join(res.args)
-        update_logs(res, command)
+        args = parse_args()
+
+        with open(args.tasks, "r") as f:
+            data = json.load(f)
+
+        for task in data.get("tasks", []):
+            command = task.get("command")
+
+            if not command:
+                print("No command found in task, skipping...")
+                continue
+
+            result = subprocess.run(
+                command, capture_output=True, cwd=args.work_dir, shell=True, text=True
+            )
+
+            update_logs(result, command)
     except Exception as e:
         print(f"Error while running command: {e}")
 
 
+def schedule_task():
+    # todo: schedule each task to run based on the type, time, minute, second provided in the tasks.json
+    pass
+
+
 def main():
-    verify_log_dir()
-    schedule.every(5).seconds.do(schedule_process)
+    # todo: update main to run schedule task after implementation of the func
+    schedule.every(5).seconds.do(run_command)
 
     while True:
         schedule.run_pending()
