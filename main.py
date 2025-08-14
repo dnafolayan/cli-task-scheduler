@@ -17,9 +17,9 @@ def validate_dir(*args):
 
 
 def validate_file(*args):
-    for file in args:
-        if not os.path.isfile(file):
-            print(f"Error: File '{file}' does not exist.")
+    for fl in args:
+        if not os.path.isfile(fl):
+            print(f"Error: File '{fl}' does not exist.")
             sys.exit(1)
 
 
