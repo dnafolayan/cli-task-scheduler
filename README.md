@@ -1,4 +1,4 @@
-# Task & Job Runner
+# CLI Task Scheduler - Automate the boring stuff
 
 A lightweight, Python-based task scheduler that runs commands on a defined schedule, logs results, and handles both success and error outputs.  
 Perfect for automating recurring tasks, backups, or data processing scripts on Linux systems.
