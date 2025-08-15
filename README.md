@@ -78,3 +78,9 @@ python3 runner.py \
 ```bash
 pip install schedule
 ```
+
+# Future Improvements
+
+-   Concurrency so multiple tasks can run in parallel.
+
+-   Retry mechanism for failed tasks.
