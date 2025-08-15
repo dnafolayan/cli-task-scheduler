@@ -58,15 +58,15 @@ def parse_args():
     return args
 
 
-def update_logs(result, command):
+def update_logs(result, command, log_dir):
     curr_datetime = datetime.now()
     curr_time = curr_datetime.strftime("%H:%M:%S")
     curr_date = curr_datetime.strftime("%Y-%m-%d")
 
     try:
-        args = parse_args()
-        result_file = os.path.join(args.log_dir, "results.log")
-        error_file = os.path.join(args.log_dir, "errors.log")
+        # args = parse_args()
+        result_file = os.path.join(log_dir, "results.log")
+        error_file = os.path.join(log_dir, "errors.log")
 
         if result.returncode != 0:
             with open(error_file, "a") as err_log:
@@ -82,37 +82,56 @@ def update_logs(result, command):
         print(f"Error while logging: {e}")
 
 
-def run_command():
+def execute_command(command, work_dir):
+    return subprocess.run(
+        command,
+        capture_output=True,
+        cwd=work_dir,
+        shell=True,
+        text=True,
+    )
+
+
+def run_task():
     try:
         args = parse_args()
 
         with open(args.tasks, "r") as f:
             data = json.load(f)
 
-        for task in data.get("tasks", []):
-            command = task.get("command")
+        for task in data["tasks"]:
+            command = task["command"]
 
             if not command:
                 print("No command found in task, skipping...")
                 continue
 
-            result = subprocess.run(
-                command, capture_output=True, cwd=args.work_dir, shell=True, text=True
-            )
-
-            update_logs(result, command)
+            if task["schedule"]["type"] == "daily":
+                schedule.every().day.at(str(task["schedule"]["time"])).do(
+                    lambda: update_logs(
+                        execute_command(command, args.work_dir), command, args.log_dir
+                    )
+                )
+            elif "minutes" in task["schedule"]:
+                schedule.every(task["schedule"]["minutes"]).minutes.do(
+                    lambda: update_logs(
+                        execute_command(command, args.work_dir), command, args.log_dir
+                    )
+                )
+            elif "seconds" in task["schedule"]:
+                schedule.every(task["schedule"]["seconds"]).seconds.do(
+                    lambda: update_logs(
+                        execute_command(command, args.work_dir), command, args.log_dir
+                    )
+                )
+            else:
+                print(f"Unknown schedule type for task: {task}, skipping...")
     except Exception as e:
         print(f"Error while running command: {e}")
 
 
-def schedule_task():
-    # todo: schedule each task to run based on the type, time, minute, second provided in the tasks.json
-    pass
-
-
 def main():
-    # todo: update main to run schedule task after implementation of the func
-    schedule.every(5).seconds.do(run_command)
+    run_task()
 
     while True:
         schedule.run_pending()
