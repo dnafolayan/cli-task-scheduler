@@ -108,20 +108,20 @@ def run_task():
 
             if task["schedule"]["type"] == "daily":
                 schedule.every().day.at(str(task["schedule"]["time"])).do(
-                    lambda: update_logs(
-                        execute_command(command, args.work_dir), command, args.log_dir
+                    lambda cmd=command: update_logs(
+                        execute_command(cmd, args.work_dir), cmd, args.log_dir
                     )
                 )
             elif "minutes" in task["schedule"]:
                 schedule.every(task["schedule"]["minutes"]).minutes.do(
-                    lambda: update_logs(
-                        execute_command(command, args.work_dir), command, args.log_dir
+                    lambda cmd=command: update_logs(
+                        execute_command(cmd, args.work_dir), cmd, args.log_dir
                     )
                 )
             elif "seconds" in task["schedule"]:
                 schedule.every(task["schedule"]["seconds"]).seconds.do(
-                    lambda: update_logs(
-                        execute_command(command, args.work_dir), command, args.log_dir
+                    lambda cmd=command: update_logs(
+                        execute_command(cmd, args.work_dir), cmd, args.log_dir
                     )
                 )
             else:
